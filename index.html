@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>چت‌بات هوشمند</title>
+    <style>
+        body { font-family: Tahoma, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; background: #f0f4f8; }
+        #chat { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-height: 400px; max-height: 500px; overflow-y: auto; }
+        .user { text-align: right; background: #007bff; color: white; padding: 10px 16px; border-radius: 18px 4px 18px 18px; margin: 8px 0; display: inline-block; max-width: 80%; float: right; clear: both; }
+        .ai { text-align: left; background: #e9ecef; color: #333; padding: 10px 16px; border-radius: 4px 18px 18px 18px; margin: 8px 0; display: inline-block; max-width: 80%; float: left; clear: both; }
+        .input-area { display: flex; margin-top: 16px; gap: 8px; }
+        input { flex: 1; padding: 14px; border: 2px solid #ddd; border-radius: 24px; outline: none; font-size: 16px; }
+        button { padding: 14px 24px; background: #007bff; color: white; border: none; border-radius: 24px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #loading { text-align: center; color: #888; display: none; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align: center;">🤖 چت‌بات هوشمند</h2>
+    
+    <div id="chat">
+        <div class="ai">سلام! هر سوالی داری بپرس.</div>
+    </div>
+    
+    <div id="loading">⏳ در حال فکر کردن...</div>
+    
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="سوال خود را بنویسید..." />
+        <button onclick="sendMessage()">ارسال</button>
+    </div>
+
+    <script>
+        // 🔑 کلید API خود را اینجا جایگذاری کن
+        const API_KEY = "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";
+        const MODEL = "google/gemini-2.0-flash-exp:free"; // مدل رایگان
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const chat = document.getElementById('chat');
+            const loading = document.getElementById('loading');
+            const msg = input.value.trim();
+            
+            if (!msg) return;
+            
+            // نمایش پیام کاربر
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user';
+            userDiv.textContent = msg;
+            chat.appendChild(userDiv);
+            input.value = '';
+            chat.scrollTop = chat.scrollHeight;
+            
+            // نمایش وضعیت بارگذاری
+            loading.style.display = 'block';
+            
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: [{ role: 'user', content: msg }]
+                    })
+                });
+                
+                const data = await response.json();
+                loading.style.display = 'none';
+                
+                if (data.choices && data.choices[0]) {
+                    const aiDiv = document.createElement('div');
+                    aiDiv.className = 'ai';
+                    aiDiv.textContent = data.choices[0].message.content;
+                    chat.appendChild(aiDiv);
+                } else {
+                    throw new Error('پاسخی دریافت نشد');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'ai';
+                errorDiv.textContent = '❌ خطا: دوباره تلاش کن';
+                chat.appendChild(errorDiv);
+                console.error('Error:', error);
+            }
+            
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // ارسال با کلید Enter
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
